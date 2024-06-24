@@ -9,6 +9,7 @@ import {
 import { upload } from "../middlewares/multer.js";
 import { isLoggedIn } from "../middlewares/authUser.js";
 import {
+  handleAddLikeComment,
   handleAddPost,
   handleDeletePost,
   handleEditPost,
@@ -35,4 +36,8 @@ apiRouter.post(
 apiRouter.get("/posts/get-all", handleGetAllPosts);
 apiRouter.get("/posts/get-single/:postId", handleGetSinglePost);
 apiRouter.delete("/posts/delete/:postId", isLoggedIn, handleDeletePost);
-apiRouter.patch("/posts/edit/:postId", isLoggedIn, handleEditPost);
+apiRouter.patch(
+  "/posts/edit/add-like-comment/:postId",
+  isLoggedIn,
+  handleAddLikeComment
+);

@@ -229,3 +229,80 @@ export const handleEditPost = async (req, res, next) => {
     next(error);
   }
 };
+
+export const handleAddLikeComment = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  const { postId } = req.params;
+  const { like, comment } = req.body;
+
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Please login");
+    }
+
+    if (postId?.length < 32) {
+      throw createError(400, "Invalid id");
+    }
+
+    const existingPost = await postsCollection.findOne({ post_id: postId });
+    if (!existingPost) {
+      throw createError(404, "Post not found");
+    }
+
+    await postsCollection.updateOne(
+      { post_id: postId },
+      { $inc: { views: 1 } }
+    );
+
+    const existingLike = existingPost?.post_additional?.likes?.find(
+      (likeEntry) => likeEntry?.user_id === user?.user_id
+    );
+
+    if (existingLike) {
+      await postsCollection.updateOne(
+        {
+          post_id: postId,
+          "post_additional.likes.user_id": user?.user_id,
+        },
+        { $set: { "post_additional.likes.$.like": !existingLike.like } }
+      );
+    } else if (like) {
+      const generateCode = crypto.randomBytes(6).toString("hex");
+      const likeEntry = {
+        id: generateCode,
+        like: true,
+        user_id: user?.user_id,
+      };
+
+      await postsCollection.updateOne(
+        { post_id: postId },
+        { $push: { "post_additional.likes": likeEntry } }
+      );
+    }
+    // Handle comment
+    if (comment) {
+      requiredField(comment, "Comment is required");
+      const processedComment = validateString(comment, "Comment", 2, 300);
+
+      const generateCode = crypto.randomBytes(6).toString("hex");
+      const commentEntry = {
+        id: generateCode,
+        comment: processedComment,
+        user_id: user.user_id,
+        createdAt: new Date(),
+      };
+
+      await postsCollection.updateOne(
+        { post_id: postId },
+        { $push: { "post_additional.comments": commentEntry } }
+      );
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Like comment added",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
