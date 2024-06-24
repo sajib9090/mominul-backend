@@ -305,9 +305,4 @@ export const handleRefreshToken = async (req, res, next) => {
   }
 };
 
-<<<<<<< HEAD
-// long commit for checking development repository
-=======
-
-// change??
->>>>>>> 39660d7e43049ee2b424e039e516b50456a300f7
+// this is final test for development repo
