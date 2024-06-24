@@ -1,7 +1,6 @@
 import createError from "http-errors";
 import { ObjectId } from "mongodb";
 import { usersCollection } from "../collections/collection.js";
-import slugify from "slugify";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -18,9 +17,12 @@ import {
   jwtSecret,
 } from "../../../important.js";
 import { emailWithNodeMailer } from "../helpers/email.js";
+import { uploadOnCloudinary } from "../helpers/cloudinary.js";
 
 export const handleCreateUser = async (req, res, next) => {
   const { name, email, password } = req.body;
+  const bufferFile = req.file?.buffer;
+
   try {
     requiredField(name, "Name is required");
     requiredField(email, "Email is required");
@@ -60,10 +62,22 @@ export const handleCreateUser = async (req, res, next) => {
     const count = await usersCollection.countDocuments();
     const generateUserCode = crypto.randomBytes(16).toString("hex");
 
+    let uploadedAvatar = null;
+    if (bufferFile) {
+      uploadedAvatar = await uploadOnCloudinary(bufferFile);
+
+      if (!uploadedAvatar?.public_id) {
+        throw createError(500, "Something went wrong. Avatar not uploaded");
+      }
+    }
+
     const newUser = {
       user_id: count + 1 + "-" + generateUserCode,
       name: processedName,
-      avatar: { id: "", url: "" },
+      avatar: {
+        id: uploadedAvatar?.public_id ? uploadedAvatar?.public_id : "",
+        url: uploadedAvatar?.url ? uploadedAvatar?.url : "",
+      },
       email: processedEmail,
       password: hashedPassword,
       role: "user",
@@ -299,6 +313,42 @@ export const handleRefreshToken = async (req, res, next) => {
       success: true,
       message: "New access token generate successfully",
       accessToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleReUploadUserAvatar = async (req, res, next) => {
+  try {
+    res.status(200).send({
+      success: true,
+      message: "Avatar changed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleGetCurrentUser = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+
+    const currentUser = await usersCollection.findOne({
+      user_id: user?.user_id,
+    });
+
+    if (currentUser) {
+      delete currentUser.password;
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Current user retrieved successfully with brand info",
+      data: currentUser,
     });
   } catch (error) {
     next(error);
