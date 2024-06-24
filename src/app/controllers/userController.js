@@ -1,5 +1,4 @@
 import createError from "http-errors";
-import { ObjectId } from "mongodb";
 import { usersCollection } from "../collections/collection.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
