@@ -304,6 +304,3 @@ export const handleRefreshToken = async (req, res, next) => {
     next(error);
   }
 };
-
-
-// change??
