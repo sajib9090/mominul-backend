@@ -1,5 +1,8 @@
 import { postsCollection } from "../collections/collection.js";
-import { uploadOnCloudinary } from "../helpers/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../helpers/cloudinary.js";
 import { requiredField } from "../helpers/requiredField.js";
 import { validateString } from "../helpers/validateString.js";
 import crypto from "crypto";
@@ -42,12 +45,16 @@ export const handleAddPost = async (req, res, next) => {
         url: uploadedPostImage?.url ? uploadedPostImage?.url : "",
       },
       post_description: processedPost,
+      restricted: false,
+      views: 0,
       createdBy: user?.user_id,
       createdAt: new Date(),
     };
 
     const result = await postsCollection.insertOne(newPost);
-    console.log(result);
+    if (!result?.insertedId) {
+      throw createError(500, "Post not added, Try again");
+    }
 
     res.status(200).send({
       success: true,
@@ -125,6 +132,98 @@ export const handleGetSinglePost = async (req, res, next) => {
       success: true,
       message: "Post retrieved successfully",
       data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleDeletePost = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  const { postId } = req.params;
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+    if (postId?.length < 32) {
+      throw createError(400, "Invalid id");
+    }
+    let query;
+    if (user.role === "admin") {
+      query = { post_id: postId };
+    } else {
+      query = { post_id: postId, createdBy: user?.user_id };
+    }
+
+    const existingPost = await postsCollection.findOne(query);
+    if (!existingPost) {
+      throw createError(404, "Post not found");
+    }
+
+    const removeImage = await deleteFromCloudinary(
+      existingPost?.post_image?.id
+    );
+
+    if (removeImage?.result != "ok") {
+      throw createError(500, "Something went wrong try again");
+    }
+
+    const result = await postsCollection.findOneAndDelete({ post_id: postId });
+
+    if (!result) {
+      throw createError(500, "Failed to delete the post");
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Post deleted",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleEditPost = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  const { postId } = req.params;
+  const { post_description } = req.body;
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+
+    if (postId?.length < 32) {
+      throw createError(400, "Invalid id");
+    }
+    requiredField(post_description, "Post description is required");
+    const processedPost = validateString(
+      post_description,
+      "Post description",
+      2,
+      3000
+    );
+
+    let query = { post_id: postId, createdBy: user?.user_id };
+
+    const existingPost = await postsCollection.findOne(query);
+    if (!existingPost) {
+      throw createError(404, "Post not found");
+    }
+
+    if (processedPost == existingPost?.post_description) {
+      throw createError(400, "Nothing to edit");
+    }
+
+    const updatedResult = await postsCollection.findOneAndUpdate(
+      { post_id: postId },
+      { $set: { post_description: processedPost } },
+      { returnDocument: "after" }
+    );
+
+    res.status(200).send({
+      success: true,
+      message: "Post edited",
+      data: updatedResult,
     });
   } catch (error) {
     next(error);

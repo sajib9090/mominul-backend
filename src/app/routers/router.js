@@ -10,6 +10,8 @@ import { upload } from "../middlewares/multer.js";
 import { isLoggedIn } from "../middlewares/authUser.js";
 import {
   handleAddPost,
+  handleDeletePost,
+  handleEditPost,
   handleGetAllPosts,
   handleGetSinglePost,
 } from "../controllers/postController.js";
@@ -32,3 +34,5 @@ apiRouter.post(
 );
 apiRouter.get("/posts/get-all", handleGetAllPosts);
 apiRouter.get("/posts/get-single/:postId", handleGetSinglePost);
+apiRouter.delete("/posts/delete/:postId", isLoggedIn, handleDeletePost);
+apiRouter.patch("/posts/edit/:postId", isLoggedIn, handleEditPost);
