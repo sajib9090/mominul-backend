@@ -1,4 +1,4 @@
-import { postsCollection } from "../collections/collection.js";
+import { postsCollection, usersCollection } from "../collections/collection.js";
 import {
   deleteFromCloudinary,
   uploadOnCloudinary,
@@ -45,6 +45,10 @@ export const handleAddPost = async (req, res, next) => {
         url: uploadedPostImage?.url ? uploadedPostImage?.url : "",
       },
       post_description: processedPost,
+      post_additional: {
+        likes: [],
+        comments: [],
+      },
       restricted: false,
       views: 0,
       createdBy: user?.user_id,
@@ -83,7 +87,7 @@ export const handleGetAllPosts = async (req, res, next) => {
       query = {};
     }
 
-    let sortCriteria = { createdAt: 1 };
+    let sortCriteria = { createdAt: -1 };
 
     const posts = await postsCollection
       .find(query)
@@ -91,6 +95,34 @@ export const handleGetAllPosts = async (req, res, next) => {
       .limit(limit)
       .skip((page - 1) * limit)
       .toArray();
+
+    // Get unique user IDs from the posts
+    const userIds = [...new Set(posts.map((post) => post.createdBy))];
+
+    // Retrieve user data for the unique user IDs, selecting only the name and avatar fields using projection
+    const users = await usersCollection
+      .find(
+        { user_id: { $in: userIds } },
+        { projection: { name: 1, avatar: 1, user_id: 1 } }
+      )
+      .toArray();
+
+    // Create a map of user data
+    const userMap = users.reduce((map, user) => {
+      map[user.user_id] = {
+        name: user.name,
+        avatar: user.avatar,
+      };
+      return map;
+    }, {});
+
+    // every single post with who created
+    const postsWithUser = posts.map((post) => {
+      return {
+        ...post,
+        user_info: userMap[post.createdBy] || null,
+      };
+    });
 
     const count = await postsCollection.countDocuments(query);
 
@@ -104,7 +136,7 @@ export const handleGetAllPosts = async (req, res, next) => {
         previousPage: page - 1 > 0 ? page - 1 : null,
         nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
       },
-      data: posts,
+      data: postsWithUser,
     });
   } catch (error) {
     next(error);
@@ -240,8 +272,13 @@ export const handleAddLikeComment = async (req, res, next) => {
       throw createError(400, "User not found. Please login");
     }
 
+    const existingUser = await usersCollection.findOne(
+      { user_id: user?.user_id },
+      { projection: { name: 1, avatar: 1, _id: 0 } }
+    );
+
     if (postId?.length < 32) {
-      throw createError(400, "Invalid id");
+      throw createError(400, "Invalid post ID");
     }
 
     const existingPost = await postsCollection.findOne({ post_id: postId });
@@ -254,24 +291,24 @@ export const handleAddLikeComment = async (req, res, next) => {
       { $inc: { views: 1 } }
     );
 
-    const existingLike = existingPost?.post_additional?.likes?.find(
+    const existingLikeIndex = existingPost?.post_additional?.likes?.findIndex(
       (likeEntry) => likeEntry?.user_id === user?.user_id
     );
 
-    if (existingLike) {
+    if (existingLikeIndex !== -1 && like === true) {
+      // Remove like if exists and like is false
       await postsCollection.updateOne(
-        {
-          post_id: postId,
-          "post_additional.likes.user_id": user?.user_id,
-        },
-        { $set: { "post_additional.likes.$.like": !existingLike.like } }
+        { post_id: postId },
+        { $pull: { "post_additional.likes": { user_id: user?.user_id } } }
       );
-    } else if (like) {
+    } else if (existingLikeIndex === -1 && like === true) {
+      // Add like if not exists and like is true
       const generateCode = crypto.randomBytes(6).toString("hex");
       const likeEntry = {
         id: generateCode,
-        like: true,
         user_id: user?.user_id,
+        name: existingUser?.name,
+        avatar: existingUser?.avatar,
       };
 
       await postsCollection.updateOne(
@@ -279,6 +316,7 @@ export const handleAddLikeComment = async (req, res, next) => {
         { $push: { "post_additional.likes": likeEntry } }
       );
     }
+
     // Handle comment
     if (comment) {
       requiredField(comment, "Comment is required");
@@ -300,7 +338,7 @@ export const handleAddLikeComment = async (req, res, next) => {
 
     res.status(200).send({
       success: true,
-      message: "Like comment added",
+      message: "Like/comment added/removed successfully",
     });
   } catch (error) {
     next(error);

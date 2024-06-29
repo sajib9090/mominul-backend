@@ -3,7 +3,9 @@ import {
   handleActivateUserAccount,
   handleCreateUser,
   handleGetCurrentUser,
+  handleGoogleLogin,
   handleLoginUser,
+  handleLogoutUser,
   handleRefreshToken,
 } from "../controllers/userController.js";
 import { upload } from "../middlewares/multer.js";
@@ -16,6 +18,7 @@ import {
   handleGetAllPosts,
   handleGetSinglePost,
 } from "../controllers/postController.js";
+import passport from "../config/passportConfig.js";
 
 export const apiRouter = express.Router();
 
@@ -23,8 +26,9 @@ export const apiRouter = express.Router();
 apiRouter.post("/users/create-user", upload.single("avatar"), handleCreateUser);
 apiRouter.get("/users/verify/:token", handleActivateUserAccount);
 apiRouter.post("/users/auth-user-login", handleLoginUser);
+apiRouter.post("/users/auth-user-logout", handleLogoutUser);
 apiRouter.get("/users/auth-manage-token", handleRefreshToken);
-apiRouter.get("/users/find-current-user", isLoggedIn, handleGetCurrentUser);
+apiRouter.post("/users/find-current-user", isLoggedIn, handleGetCurrentUser);
 
 //post router
 apiRouter.post(
@@ -41,4 +45,17 @@ apiRouter.patch(
   "/posts/edit/add-like-comment/:postId",
   isLoggedIn,
   handleAddLikeComment
+);
+
+//google router
+// google user
+apiRouter.get(
+  "/users/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+apiRouter.get(
+  "/users/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login", session: true }),
+  handleGoogleLogin
 );

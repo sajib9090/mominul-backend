@@ -5,7 +5,10 @@ import morgan from "morgan";
 import createError from "http-errors";
 import { rateLimit } from "express-rate-limit";
 import UAParser from "ua-parser-js";
+import session from "express-session";
+import passport from "./config/passportConfig.js";
 import { apiRouter } from "./routers/router.js";
+import { sessionSecret } from "../../important.js";
 
 const app = express();
 
@@ -32,6 +35,18 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// google
+app.use(
+  session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // routes
 app.use("/api/v2", apiRouter);
