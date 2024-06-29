@@ -17,6 +17,11 @@ const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
 const cloudinaryApiSecret = process.env.CLOUDINARY_API_SECRET;
 
+const googleClientID = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+const sessionSecret = process.env.SESSION_SECRET;
+
 export {
   port,
   mongoDB_URI,
@@ -30,4 +35,7 @@ export {
   cloudinaryCloudName,
   cloudinaryApiKey,
   cloudinaryApiSecret,
+  googleClientID,
+  googleClientSecret,
+  sessionSecret,
 };
