@@ -24,7 +24,7 @@ export const handleAddPost = async (req, res, next) => {
       post_description,
       "Post description",
       2,
-      3000
+      30000
     );
 
     const generateCode = crypto.randomBytes(16).toString("hex");
@@ -47,7 +47,6 @@ export const handleAddPost = async (req, res, next) => {
       post_description: processedPost,
       post_additional: {
         likes: [],
-        comments: [],
       },
       restricted: false,
       views: 0,
@@ -262,10 +261,10 @@ export const handleEditPost = async (req, res, next) => {
   }
 };
 
-export const handleAddLikeComment = async (req, res, next) => {
+export const handleAddLike = async (req, res, next) => {
   const user = req.user.user ? req.user.user : req.user;
   const { postId } = req.params;
-  const { like, comment } = req.body;
+  const { like } = req.body;
 
   try {
     if (!user) {
@@ -318,23 +317,23 @@ export const handleAddLikeComment = async (req, res, next) => {
     }
 
     // Handle comment
-    if (comment) {
-      requiredField(comment, "Comment is required");
-      const processedComment = validateString(comment, "Comment", 2, 300);
+    // if (comment) {
+    //   requiredField(comment, "Comment is required");
+    //   const processedComment = validateString(comment, "Comment", 2, 300);
 
-      const generateCode = crypto.randomBytes(6).toString("hex");
-      const commentEntry = {
-        id: generateCode,
-        comment: processedComment,
-        user_id: user.user_id,
-        createdAt: new Date(),
-      };
+    //   const generateCode = crypto.randomBytes(6).toString("hex");
+    //   const commentEntry = {
+    //     id: generateCode,
+    //     comment: processedComment,
+    //     user_id: user.user_id,
+    //     createdAt: new Date(),
+    //   };
 
-      await postsCollection.updateOne(
-        { post_id: postId },
-        { $push: { "post_additional.comments": commentEntry } }
-      );
-    }
+    //   await postsCollection.updateOne(
+    //     { post_id: postId },
+    //     { $push: { "post_additional.comments": commentEntry } }
+    //   );
+    // }
 
     res.status(200).send({
       success: true,
