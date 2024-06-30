@@ -11,7 +11,7 @@ import {
 import { upload } from "../middlewares/multer.js";
 import { isLoggedIn } from "../middlewares/authUser.js";
 import {
-  handleAddLikeComment,
+  handleAddLike,
   handleAddPost,
   handleDeletePost,
   handleEditPost,
@@ -19,6 +19,10 @@ import {
   handleGetSinglePost,
 } from "../controllers/postController.js";
 import passport from "../config/passportConfig.js";
+import {
+  handleAddComment,
+  handleGetCommentByPost,
+} from "../controllers/likeCommentController.js";
 
 export const apiRouter = express.Router();
 
@@ -41,11 +45,11 @@ apiRouter.get("/posts/get-all", handleGetAllPosts);
 apiRouter.get("/posts/get-single/:postId", handleGetSinglePost);
 apiRouter.delete("/posts/delete/:postId", isLoggedIn, handleDeletePost);
 apiRouter.patch("/posts/edit/:postId", isLoggedIn, handleEditPost);
-apiRouter.patch(
-  "/posts/edit/add-like-comment/:postId",
-  isLoggedIn,
-  handleAddLikeComment
-);
+apiRouter.patch("/posts/edit/add-like/:postId", isLoggedIn, handleAddLike);
+
+//like comment router
+apiRouter.post("/posts/add-comment/:postId", isLoggedIn, handleAddComment);
+apiRouter.get("/posts/get-comment/:postId", isLoggedIn, handleGetCommentByPost);
 
 //google router
 // google user
