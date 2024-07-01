@@ -4,6 +4,4 @@ const db_name = "social-connection";
 
 export const usersCollection = client.db(db_name).collection("users");
 export const postsCollection = client.db(db_name).collection("posts");
-export const likeCommentCollection = client
-  .db(db_name)
-  .collection("like-comments");
+export const commentsCollection = client.db(db_name).collection("comments");

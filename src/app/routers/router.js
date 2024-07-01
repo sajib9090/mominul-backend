@@ -21,8 +21,10 @@ import {
 import passport from "../config/passportConfig.js";
 import {
   handleAddComment,
+  handleDeleteCommentFromPost,
   handleGetCommentByPost,
-} from "../controllers/likeCommentController.js";
+  handleHideCommentByPostOwner,
+} from "../controllers/commentController.js";
 
 export const apiRouter = express.Router();
 
@@ -50,6 +52,16 @@ apiRouter.patch("/posts/edit/add-like/:postId", isLoggedIn, handleAddLike);
 //like comment router
 apiRouter.post("/posts/add-comment/:postId", isLoggedIn, handleAddComment);
 apiRouter.get("/posts/get-comment/:postId", isLoggedIn, handleGetCommentByPost);
+apiRouter.delete(
+  "/posts/delete-comment/:commentId",
+  isLoggedIn,
+  handleDeleteCommentFromPost
+);
+apiRouter.delete(
+  "/posts/hide-comment/:commentId",
+  isLoggedIn,
+  handleHideCommentByPostOwner
+);
 
 //google router
 // google user
