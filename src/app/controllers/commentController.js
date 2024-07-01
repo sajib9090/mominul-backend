@@ -1,5 +1,5 @@
 import {
-  likeCommentCollection,
+  commentsCollection,
   postsCollection,
   usersCollection,
 } from "../collections/collection.js";
@@ -51,7 +51,7 @@ export const handleAddComment = async (req, res, next) => {
       createdAt: new Date(),
     };
 
-    const addComment = await likeCommentCollection.insertOne(commentEntry);
+    const addComment = await commentsCollection.insertOne(commentEntry);
     if (!addComment?.insertedId) {
       throw createError(500, "Comment not added. Try again");
     }
@@ -94,7 +94,7 @@ export const handleGetCommentByPost = async (req, res, next) => {
       { $inc: { views: 1 } }
     );
 
-    const comments = await likeCommentCollection
+    const comments = await commentsCollection
       .find({ post_id: postId })
       .sort({ createdAt: -1 })
       .toArray();
@@ -103,6 +103,98 @@ export const handleGetCommentByPost = async (req, res, next) => {
       success: true,
       message: "Post comment retrieved successfully",
       data: comments,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleDeleteCommentFromPost = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  const { commentId } = req.params;
+
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Please login");
+    }
+
+    if (commentId?.length < 12) {
+      throw createError(400, "Invalid comment ID");
+    }
+
+    const existingComment = await commentsCollection.findOne({
+      id: commentId,
+      user_id: user?.user_id,
+    });
+    if (!existingComment) {
+      throw createError(404, "Comment not found");
+    }
+
+    const deleteComment = await commentsCollection.findOneAndDelete({
+      id: commentId,
+    });
+
+    if (!deleteComment) {
+      throw createError(500, "Comment not deleted. Try again");
+    }
+
+    await postsCollection.updateOne(
+      { post_id: existingComment?.post_id },
+      { $inc: { total_comment: -1 } }
+    );
+
+    res.status(200).send({
+      success: true,
+      message: "Comment deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleHideCommentByPostOwner = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  const { commentId } = req.params;
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Please login");
+    }
+
+    if (commentId?.length < 12) {
+      throw createError(400, "Invalid comment ID");
+    }
+
+    const existingComment = await commentsCollection.findOne({
+      id: commentId,
+    });
+    if (!existingComment) {
+      throw createError(404, "Comment not found");
+    }
+
+    const matchOwnerShip = await postsCollection.findOne({
+      $and: [{ post_id: existingComment?.post_id, createdBy: user?.user_id }],
+    });
+
+    if (!matchOwnerShip) {
+      throw createError(403, "You are not the owner of this post");
+    }
+
+    const deleteComment = await commentsCollection.findOneAndDelete({
+      id: commentId,
+    });
+
+    if (!deleteComment) {
+      throw createError(500, "Comment not deleted. Try again");
+    }
+
+    await postsCollection.updateOne(
+      { post_id: existingComment?.post_id },
+      { $inc: { total_comment: -1 } }
+    );
+
+    res.status(200).send({
+      success: true,
+      message: "Comment hide successfully by post owner",
     });
   } catch (error) {
     next(error);
