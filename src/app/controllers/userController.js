@@ -204,13 +204,13 @@ export const handleLoginUser = async (req, res, next) => {
     const user = await usersCollection.findOne({ email: stringData });
 
     if (!user) {
-      return next(createError.BadRequest("Invalid credentials"));
+      return next(createError.BadRequest("Invalid email or password"));
     }
 
     // Match password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return next(createError.Unauthorized("Invalid Credentials"));
+      return next(createError.Unauthorized("Invalid email or password"));
     }
 
     // check email verified or not
@@ -415,6 +415,19 @@ export const handleGoogleLogin = async (req, res, next) => {
       message: "Google login successfully",
       data: userObject,
       accessToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleGoogleLoginFailure = (req, res, next) => {
+  try {
+    const errorMessage =
+      req.session.messages[0] || "Authentication failed. Please try again.";
+
+    res.status(200).send({
+      message: errorMessage,
     });
   } catch (error) {
     next(error);

@@ -20,8 +20,17 @@ passport.use(
       try {
         // Find or create a user in your database
         let user = await usersCollection.findOne({ googleId: profile?.id });
+        let user1 = await usersCollection.findOne({
+          email: profile?.emails[0]?.value,
+        });
 
-        if (!user) {
+        if (!user && user1) {
+          return done(null, false, {
+            message: "User already exists with this email",
+          });
+        }
+
+        if (!user && !user1) {
           const count = await usersCollection.countDocuments();
           const generateUserCode = crypto.randomBytes(16).toString("hex");
           const newUser = {
