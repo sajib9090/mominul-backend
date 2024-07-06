@@ -78,7 +78,9 @@ apiRouter.get(
     successRedirect: `${frontEndURL}/login/success`,
     failureRedirect: `${frontEndURL}/login/failure`,
     session: true,
+    failureMessage: true,
   })
 );
 
 apiRouter.get("/users/google-login/success", handleGoogleLogin);
+apiRouter.get("/users/google-login/failure", handleGoogleLoginFailure);
