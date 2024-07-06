@@ -4,6 +4,7 @@ import {
   handleCreateUser,
   handleGetCurrentUser,
   handleGoogleLogin,
+  handleGoogleLoginFailure,
   handleLoginUser,
   handleLogoutUser,
   handleRefreshToken,
@@ -75,7 +76,7 @@ apiRouter.get(
   "/users/google/callback",
   passport.authenticate("google", {
     successRedirect: `${frontEndURL}/login/success`,
-    failureRedirect: `${frontEndURL}/login`,
+    failureRedirect: `${frontEndURL}/login/failure`,
     session: true,
   })
 );

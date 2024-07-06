@@ -204,13 +204,13 @@ export const handleLoginUser = async (req, res, next) => {
     const user = await usersCollection.findOne({ email: stringData });
 
     if (!user) {
-      return next(createError.BadRequest("Invalid credentials"));
+      return next(createError.BadRequest("Invalid email or password"));
     }
 
     // Match password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return next(createError.Unauthorized("Invalid Credentials"));
+      return next(createError.Unauthorized("Invalid email or password"));
     }
 
     // check email verified or not
@@ -336,87 +336,5 @@ export const handleRefreshToken = async (req, res, next) => {
   }
 };
 
-export const handleReUploadUserAvatar = async (req, res, next) => {
-  try {
-    res.status(200).send({
-      success: true,
-      message: "Avatar changed successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
-export const handleGetCurrentUser = async (req, res, next) => {
-  const user = req.user.user ? req.user.user : req.user;
-  try {
-    if (!user) {
-      throw createError(400, "User not found. Login again");
-    }
-
-    const currentUser = await usersCollection.findOne({
-      user_id: user?.user_id,
-    });
-
-    if (currentUser) {
-      delete currentUser.password;
-    }
-
-    res.status(200).send({
-      success: true,
-      message: "Current user retrieved successfully",
-      data: currentUser,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// google controller
-export const handleGoogleLogin = async (req, res, next) => {
-  const user = req.user;
-  try {
-    if (!user?.googleId) {
-      return res.redirect(`${frontEndURL}/login`);
-    }
-
-    if (user?.banned_user) {
-      return next(
-        createError.Unauthorized("You are banned. Please contact authority")
-      );
-    }
-
-    // check user removed or not
-    if (user?.deleted_user) {
-      return next(
-        createError.Unauthorized("You are deleted. Please contact authority")
-      );
-    }
-
-    const loggedInUser = {
-      user_id: user?.user_id,
-      role: user?.role,
-    };
-
-    const userObject = { ...loggedInUser };
-
-    const accessToken = await createJWT(userObject, jwtAccessToken, "10m");
-
-    const refreshToken = await createJWT(userObject, jwtRefreshToken, "7d");
-    res.cookie("refreshToken", refreshToken, {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    });
-
-    res.status(200).send({
-      success: true,
-      message: "Google login successfully",
-      data: userObject,
-      accessToken,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+// change??

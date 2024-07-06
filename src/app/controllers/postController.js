@@ -41,8 +41,13 @@ export const handleAddPost = async (req, res, next) => {
     const newPost = {
       post_id: generateCode,
       post_image: {
+<<<<<<< HEAD
         id: uploadedPostImage?.public_id ? uploadedPostImage?.public_id : "",
         url: uploadedPostImage?.url ? uploadedPostImage?.url : "",
+=======
+        id: uploadedPostImage?.public_id || null,
+        url: uploadedPostImage?.url || null,
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
       },
       post_description: processedPost,
       post_additional: {
@@ -153,6 +158,17 @@ export const handleGetSinglePost = async (req, res, next) => {
     if (!result) {
       throw createError(404, "Post not found");
     }
+<<<<<<< HEAD
+=======
+
+    const postOwner = await usersCollection.findOne(
+      {
+        user_id: result?.createdBy,
+      },
+      { projection: { name: 1, avatar: 1, _id: 0 } }
+    );
+
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
     // add view value
     await postsCollection.findOneAndUpdate(
       { post_id: result.post_id },
@@ -162,7 +178,11 @@ export const handleGetSinglePost = async (req, res, next) => {
     res.status(200).send({
       success: true,
       message: "Post retrieved successfully",
+<<<<<<< HEAD
       data: result,
+=======
+      data: { user_info: postOwner, ...result },
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
     });
   } catch (error) {
     next(error);
@@ -191,12 +211,23 @@ export const handleDeletePost = async (req, res, next) => {
       throw createError(404, "Post not found");
     }
 
+<<<<<<< HEAD
     const removeImage = await deleteFromCloudinary(
       existingPost?.post_image?.id
     );
 
     if (removeImage?.result != "ok") {
       throw createError(500, "Something went wrong try again");
+=======
+    if (existingPost?.post_image?.id) {
+      const removeImage = await deleteFromCloudinary(
+        existingPost?.post_image?.id
+      );
+
+      if (removeImage?.result != "ok") {
+        throw createError(500, "Something went wrong try again");
+      }
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
     }
 
     const result = await postsCollection.findOneAndDelete({ post_id: postId });
