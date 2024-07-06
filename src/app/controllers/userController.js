@@ -1,7 +1,5 @@
 import createError from "http-errors";
-import { ObjectId } from "mongodb";
 import { usersCollection } from "../collections/collection.js";
-import slugify from "slugify";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -18,9 +16,12 @@ import {
   jwtSecret,
 } from "../../../important.js";
 import { emailWithNodeMailer } from "../helpers/email.js";
+import { uploadOnCloudinary } from "../helpers/cloudinary.js";
 
 export const handleCreateUser = async (req, res, next) => {
   const { name, email, password } = req.body;
+  const bufferFile = req.file?.buffer;
+
   try {
     requiredField(name, "Name is required");
     requiredField(email, "Email is required");
@@ -60,10 +61,22 @@ export const handleCreateUser = async (req, res, next) => {
     const count = await usersCollection.countDocuments();
     const generateUserCode = crypto.randomBytes(16).toString("hex");
 
+    let uploadedAvatar = null;
+    if (bufferFile) {
+      uploadedAvatar = await uploadOnCloudinary(bufferFile);
+
+      if (!uploadedAvatar?.public_id) {
+        throw createError(500, "Something went wrong. Avatar not uploaded");
+      }
+    }
+
     const newUser = {
       user_id: count + 1 + "-" + generateUserCode,
       name: processedName,
-      avatar: { id: "", url: "" },
+      avatar: {
+        id: uploadedAvatar?.public_id || null,
+        url: uploadedAvatar?.url || null,
+      },
       email: processedEmail,
       password: hashedPassword,
       role: "user",
@@ -273,6 +286,24 @@ export const handleLoginUser = async (req, res, next) => {
   }
 };
 
+export const handleLogoutUser = async (req, res, next) => {
+  try {
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    // console.log(req.user);
+    // res.clearCookie("accessToken", options);
+    res.clearCookie("refreshToken", options);
+    res.status(200).send({
+      success: true,
+      message: "User logout successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const handleRefreshToken = async (req, res, next) => {
   const oldRefreshToken = req.cookies.refreshToken;
   try {
@@ -298,6 +329,91 @@ export const handleRefreshToken = async (req, res, next) => {
     res.status(200).send({
       success: true,
       message: "New access token generate successfully",
+      accessToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleReUploadUserAvatar = async (req, res, next) => {
+  try {
+    res.status(200).send({
+      success: true,
+      message: "Avatar changed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const handleGetCurrentUser = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  try {
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+
+    const currentUser = await usersCollection.findOne({
+      user_id: user?.user_id,
+    });
+
+    if (currentUser) {
+      delete currentUser.password;
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Current user retrieved successfully",
+      data: currentUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// google controller
+export const handleGoogleLogin = async (req, res, next) => {
+  const user = req.user;
+  try {
+    if (!user?.googleId) {
+      return res.redirect(`${frontEndURL}/login`);
+    }
+
+    if (user?.banned_user) {
+      return next(
+        createError.Unauthorized("You are banned. Please contact authority")
+      );
+    }
+
+    // check user removed or not
+    if (user?.deleted_user) {
+      return next(
+        createError.Unauthorized("You are deleted. Please contact authority")
+      );
+    }
+
+    const loggedInUser = {
+      user_id: user?.user_id,
+      role: user?.role,
+    };
+
+    const userObject = { ...loggedInUser };
+
+    const accessToken = await createJWT(userObject, jwtAccessToken, "10m");
+
+    const refreshToken = await createJWT(userObject, jwtRefreshToken, "7d");
+    res.cookie("refreshToken", refreshToken, {
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    res.status(200).send({
+      success: true,
+      message: "Google login successfully",
+      data: userObject,
       accessToken,
     });
   } catch (error) {
