@@ -22,9 +22,12 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
 const sessionSecret = process.env.SESSION_SECRET;
 
+<<<<<<< HEAD
+=======
 const facebookClientID = process.env.FACEBOOK_CLIENT_ID;
 const facebookClientSecret = process.env.FACEBOOK_CLIENT_SECRET;
 
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
 export {
   port,
   mongoDB_URI,
@@ -41,6 +44,9 @@ export {
   googleClientID,
   googleClientSecret,
   sessionSecret,
+<<<<<<< HEAD
+=======
   facebookClientID,
   facebookClientSecret,
+>>>>>>> cd459bf479d9b34237b6b14967000149f39a165a
 };
