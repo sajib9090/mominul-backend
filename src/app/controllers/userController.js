@@ -410,7 +410,12 @@ export const handleGoogleLogin = async (req, res, next) => {
       sameSite: "none",
     });
 
-    res.redirect(`${frontEndURL}/login/success?accessToken=${accessToken}`);
+    res.status(200).send({
+      success: true,
+      message: "Google login successfully",
+      data: userObject,
+      accessToken,
+    });
   } catch (error) {
     next(error);
   }

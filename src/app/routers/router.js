@@ -25,6 +25,7 @@ import {
   handleGetCommentByPost,
   handleHideCommentByPostOwner,
 } from "../controllers/commentController.js";
+import { frontEndURL } from "../../../important.js";
 
 export const apiRouter = express.Router();
 
@@ -72,6 +73,11 @@ apiRouter.get(
 
 apiRouter.get(
   "/users/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login", session: true }),
-  handleGoogleLogin
+  passport.authenticate("google", {
+    successRedirect: `${frontEndURL}/login/success`,
+    failureRedirect: `${frontEndURL}/login`,
+    session: true,
+  })
 );
+
+apiRouter.get("/users/google-login/success", handleGoogleLogin);
