@@ -18,6 +18,7 @@ import {
   handleDeletePost,
   handleEditPost,
   handleGetAllPosts,
+  handleGetPostByUserId,
   handleGetSinglePost,
 } from "../controllers/postController.js";
 import passport from "../config/passportConfig.js";
@@ -66,6 +67,8 @@ apiRouter.delete(
   isLoggedIn,
   handleHideCommentByPostOwner
 );
+
+apiRouter.get("/posts/get-posts/:userId", isLoggedIn, handleGetPostByUserId);
 
 //google router
 // google user

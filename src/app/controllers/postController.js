@@ -334,3 +334,66 @@ export const handleAddLike = async (req, res, next) => {
     next(error);
   }
 };
+
+export const handleGetPostByUserId = async (req, res, next) => {
+  const { userId } = req.params;
+  const user = req.user.user ? req.user.user : req.user;
+  try {
+    if (!userId || userId.length < 32) {
+      throw createError(400, "Invalid user id");
+    }
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+    const search = req.query.search || "";
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit);
+
+    const regExSearch = new RegExp(".*" + search + ".*", "i");
+
+    const existingUser = await usersCollection.findOne(
+      { user_id: userId },
+      { projection: { user_id: 1, _id: 0, avatar: 1, email: 1, name: 1 } }
+    );
+
+    if (!existingUser) {
+      throw createError(404, "User not found");
+    }
+
+    let query = { createdBy: userId };
+
+    if (search) {
+      query = {
+        createdBy: userId,
+        $or: [{ post_description: regExSearch }, { post_id: regExSearch }],
+      };
+    }
+
+    let sortCriteria = { createdAt: -1 };
+
+    const posts = await postsCollection
+      .find(query)
+      .sort(sortCriteria)
+      .limit(limit)
+      .skip((page - 1) * limit)
+      .toArray();
+
+    const count = await postsCollection.countDocuments(query);
+
+    res.status(200).send({
+      success: true,
+      message: "Posts retrieved successfully",
+      data_found: count,
+      pagination: {
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        previousPage: page - 1 > 0 ? page - 1 : null,
+        nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
+      },
+      data: posts,
+      post_creator: existingUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
