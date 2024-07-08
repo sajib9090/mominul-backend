@@ -124,6 +124,62 @@ export const handleCreateUser = async (req, res, next) => {
   }
 };
 
+export const handleGetAllUser = async (req, res, next) => {
+  const user = req.user.user ? req.user.user : req.user;
+  try {
+    const search = req.query.search || "";
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit);
+    const regExSearch = new RegExp(".*" + search + ".*", "i");
+    if (!user) {
+      throw createError(400, "User not found. Login again");
+    }
+
+    if (user?.role !== "admin") {
+      throw createError(403, "Forbidden access only admin can access");
+    }
+
+    let query;
+
+    if (search) {
+      query = {
+        $or: [
+          { username: regExSearch },
+          { email: regExSearch },
+          { name: regExSearch },
+        ],
+      };
+    } else {
+      query = {};
+    }
+
+    let sortCriteria = { email: 1 };
+    const users = await usersCollection
+      .find(query)
+      .sort(sortCriteria)
+      .limit(limit)
+      .skip((page - 1) * limit)
+      .toArray();
+
+    const count = await usersCollection.countDocuments(query);
+
+    res.status(200).send({
+      success: true,
+      message: "Users retrieved successfully",
+      data_found: count,
+      pagination: {
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        previousPage: page - 1 > 0 ? page - 1 : null,
+        nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
+      },
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const handleActivateUserAccount = async (req, res, next) => {
   const token = req.params.token;
   try {

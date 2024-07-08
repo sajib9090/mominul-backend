@@ -326,25 +326,6 @@ export const handleAddLike = async (req, res, next) => {
       );
     }
 
-    // Handle comment
-    // if (comment) {
-    //   requiredField(comment, "Comment is required");
-    //   const processedComment = validateString(comment, "Comment", 2, 300);
-
-    //   const generateCode = crypto.randomBytes(6).toString("hex");
-    //   const commentEntry = {
-    //     id: generateCode,
-    //     comment: processedComment,
-    //     user_id: user.user_id,
-    //     createdAt: new Date(),
-    //   };
-
-    //   await postsCollection.updateOne(
-    //     { post_id: postId },
-    //     { $push: { "post_additional.comments": commentEntry } }
-    //   );
-    // }
-
     res.status(200).send({
       success: true,
       message: "Like/comment added/removed successfully",

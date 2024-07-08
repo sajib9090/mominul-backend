@@ -2,6 +2,7 @@ import express from "express";
 import {
   handleActivateUserAccount,
   handleCreateUser,
+  handleGetAllUser,
   handleGetCurrentUser,
   handleGoogleLogin,
   handleGoogleLoginFailure,
@@ -37,6 +38,7 @@ apiRouter.post("/users/auth-user-login", handleLoginUser);
 apiRouter.post("/users/auth-user-logout", handleLogoutUser);
 apiRouter.get("/users/auth-manage-token", handleRefreshToken);
 apiRouter.post("/users/find-current-user", isLoggedIn, handleGetCurrentUser);
+apiRouter.get("/users/get-all", isLoggedIn, handleGetAllUser);
 
 //post router
 apiRouter.post(
