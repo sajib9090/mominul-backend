@@ -4,7 +4,6 @@ import {
   usersCollection,
 } from "../collections/collection.js";
 import { requiredField } from "../helpers/requiredField.js";
-import { validateString } from "../helpers/validateString.js";
 import crypto from "crypto";
 import createError from "http-errors";
 
@@ -43,6 +42,7 @@ export const handleAddComment = async (req, res, next) => {
         "Comment should be minimum 2 characters and max 2000 characters long"
       );
     }
+    //update
 
     const generateCode = crypto.randomBytes(6).toString("hex");
 
