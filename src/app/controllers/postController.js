@@ -20,12 +20,15 @@ export const handleAddPost = async (req, res, next) => {
 
     requiredField(post_description, "Post description is required");
 
-    const processedPost = validateString(
-      post_description,
-      "Post description",
-      2,
-      30000
-    );
+    if (
+      (post_description?.length ?? 0) > 30000 ||
+      (post_description?.length ?? 0) < 2
+    ) {
+      throw createError(
+        400,
+        "Post text can't be greater than 30000 characters and not less than 2 characters"
+      );
+    }
 
     const generateCode = crypto.randomBytes(16).toString("hex");
 
@@ -44,7 +47,7 @@ export const handleAddPost = async (req, res, next) => {
         id: uploadedPostImage?.public_id ? uploadedPostImage?.public_id : "",
         url: uploadedPostImage?.url ? uploadedPostImage?.url : "",
       },
-      post_description: processedPost,
+      post_description: post_description,
       post_additional: {
         likes: [],
       },
