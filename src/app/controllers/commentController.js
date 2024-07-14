@@ -49,7 +49,7 @@ export const handleAddComment = async (req, res, next) => {
     const commentEntry = {
       post_id: existingPost?.post_id,
       id: generateCode,
-      comment: processedComment,
+      comment: comment,
       user_id: user?.user_id,
       name: existingUser?.name,
       avatar: existingUser?.avatar,
