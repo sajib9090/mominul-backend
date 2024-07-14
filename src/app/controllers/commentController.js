@@ -37,7 +37,12 @@ export const handleAddComment = async (req, res, next) => {
     );
 
     requiredField(comment, "Comment is required");
-    const processedComment = validateString(comment, "Comment", 2, 300);
+    if (comment?.length < 2 || comment?.length > 2000) {
+      throw createError(
+        400,
+        "Comment should be minimum 2 characters and max 2000 characters long"
+      );
+    }
 
     const generateCode = crypto.randomBytes(6).toString("hex");
 
