@@ -25,7 +25,11 @@ const limiter = rateLimit({
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://thoughts-app-v1.web.app"],
+    origin: [
+      "http://localhost:5173",
+      "https://thoughts-app-v1.web.app",
+      "https://writeyour-thought.web.app",
+    ],
     credentials: true,
     optionsSuccessStatus: 200,
   })
