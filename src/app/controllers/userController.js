@@ -431,6 +431,7 @@ export const handleGetCurrentUser = async (req, res, next) => {
 // google controller
 export const handleGoogleLogin = async (req, res, next) => {
   const user = req.user;
+  console.log(user);
   try {
     if (!user?.googleId) {
       return res.redirect(`${frontEndURL}/login`);
