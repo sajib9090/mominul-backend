@@ -78,7 +78,7 @@ apiRouter.get(
 );
 
 apiRouter.get(
-  "/users/google/callback",
+  "/users/callback/google",
   passport.authenticate("google", {
     successRedirect: `${frontEndURL}/login/success`,
     failureRedirect: `${frontEndURL}/login/failure`,
